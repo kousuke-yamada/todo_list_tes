@@ -1,8 +1,9 @@
 import React,{useState, useEffect} from "react";
 import localforage from 'localforage';
+import { fetchTodos, createTodo, updateTodo, deleteTodo } from './api';
 
 //***** 型の定義 *****//
-type Todo ={
+export interface Todo {
   content: string;
   readonly id: number;
   completed_flg: boolean;
@@ -19,40 +20,46 @@ const Todo: React.FC = () => {
 
   const isFormDisabled = filter === 'completed'|| filter === 'delete';
 
+  // コンポーネントマウント時にRail APIからデータを取得
+  useEffect(() => {
+    fetchTodos().then(data => setTodos(data));
+  },[]);
+
   // Todoオブジェクトのプロパティ更新処理
   const  handleTodo = <K extends keyof Todo, V extends Todo[K]>(
     id: number,
     key: K,
     value: V
   ) => {
-    setTodos((todos) => {
-      const newTodos = todos.map((todo) => {
-        if(todo.id === id){
-          return {...todo, [key]: value};          
-        }else{
-          return todo;
-        }
-      });
-      return newTodos;
-    });
+    const updatedTodos = todos.map(todo =>
+      todo.id === id ? {...todo, [key]: value} : todo
+    );
+    
+    setTodos(updatedTodos);
+
+    const todo = updatedTodos.find(todo => todo.id === id);
+    if(todo){
+      updateTodo(id, todo);
+    }    
   };
 
   // Todoの追加ボタン押下時の処理
   const handleSubmit = () =>{
     // 何も入力されていなかったらリターン
     if(!text) return;
-    // 新しいTodoを作成
-    const newTodo: Todo = {
+    
+    const newTodo: Omit<Todo, 'id'> = {
       content: text,
-      id: nextId,
       completed_flg: false,
       delete_flg: false,
     }
-    // 更新前のtodosステートを元にスプレッド構文で展開した要素へnewTodoを加えた新しい配列でステートを更新
-    setTodos((prevTodos)=>[newTodo, ...prevTodos]);
-    setNextId(nextId + 1);
-    setText('');    // フォームのクリア
-  }
+
+    createTodo(newTodo).then(data => {
+      setTodos((prevTodos) => [data, ...prevTodos]);
+      setNextId(nextId + 1);
+      setText('');    // フォームのクリア
+    });    
+  };
   // Todoのフィルター（セレクトボックス）変更時の処理
   const handleFilterChange = (filter: Filter) => {
     setFilter(filter);
@@ -72,21 +79,12 @@ const Todo: React.FC = () => {
   };
   // 削除対象のタスクリストを取得する処理
   const handleEmpty = () =>{
-    setTodos((todos) => todos.filter((todo) => !todo.delete_flg));
+    const filteredTodos = todos.filter(todo => !todo.delete_flg);
+    const deletePromises = todos.filter(todo => todo.delete_flg)
+    .map(todo => deleteTodo(todo.id));
+    
+    Promise.all(deletePromises).then(() => setTodos(filteredTodos));
   }
-
-  // コンポーネントのマウント時にデータを取得
-  useEffect(() => {
-    localforage.getItem('todo-20240622').then((values) => {
-      if (values) {
-        setTodos(values as Todo[]);
-      }
-    });
-  }, []);
-  // todosステートが更新されるたびにデータを保存
-  useEffect(() => {
-    localforage.setItem('todo-20240622', todos);
-  }, [todos]);
 
   return (
     <div className = "todo-container">
