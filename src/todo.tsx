@@ -1,4 +1,5 @@
-import React,{useState} from "react";
+import React,{useState, useEffect} from "react";
+import localforage from 'localforage';
 
 //***** 型の定義 *****//
 type Todo ={
@@ -18,6 +19,24 @@ const Todo: React.FC = () => {
 
   const isFormDisabled = filter === 'completed'|| filter === 'delete';
 
+  // Todoオブジェクトのプロパティ更新処理
+  const  handleTodo = <K extends keyof Todo, V extends Todo[K]>(
+    id: number,
+    key: K,
+    value: V
+  ) => {
+    setTodos((todos) => {
+      const newTodos = todos.map((todo) => {
+        if(todo.id === id){
+          return {...todo, [key]: value};          
+        }else{
+          return todo;
+        }
+      });
+      return newTodos;
+    });
+  };
+
   // Todoの追加ボタン押下時の処理
   const handleSubmit = () =>{
     // 何も入力されていなかったらリターン
@@ -33,42 +52,6 @@ const Todo: React.FC = () => {
     setTodos((prevTodos)=>[newTodo, ...prevTodos]);
     setNextId(nextId + 1);
     setText('');    // フォームのクリア
-  }
-  // Todoの内容編集の処理
-  const handleEdit = (id:number, value: string) => {
-    setTodos((todos) => {
-      const newTodos = todos.map((todo) => {
-        if(todo.id == id){
-          return {...todo, content: value}
-        }
-        return todo;
-      });
-      return newTodos;
-    })
-  }
-  // Todoのチェックボックス変更時の処理
-  const handleCheck = (id: number, completed_flg: boolean) => {
-    setTodos((todos) => {
-      const newTodos = todos.map((todo) => {
-        if(todo.id === id){
-          return { ...todo, completed_flg};
-        }
-        return todo;
-      })
-      return newTodos;
-    })    
-  };
-  // Todoの削除ボタン押下時の処理
-  const handleRemove = (id: number, delete_flg: boolean) => {
-    setTodos((todos) => {
-      const newTodos = todos.map((todo) => {
-        if(todo.id === id){
-          return {...todo, delete_flg}
-        }
-        return todo;
-      });
-      return newTodos;
-    })
   }
   // Todoのフィルター（セレクトボックス）変更時の処理
   const handleFilterChange = (filter: Filter) => {
@@ -91,6 +74,19 @@ const Todo: React.FC = () => {
   const handleEmpty = () =>{
     setTodos((todos) => todos.filter((todo) => !todo.delete_flg));
   }
+
+  // コンポーネントのマウント時にデータを取得
+  useEffect(() => {
+    localforage.getItem('todo-20240622').then((values) => {
+      if (values) {
+        setTodos(values as Todo[]);
+      }
+    });
+  }, []);
+  // todosステートが更新されるたびにデータを保存
+  useEffect(() => {
+    localforage.setItem('todo-20240622', todos);
+  }, [todos]);
 
   return (
     <div className = "todo-container">
@@ -126,19 +122,18 @@ const Todo: React.FC = () => {
               <input
               type="checkbox"
               checked={todo.completed_flg}
-              onChange={() => handleCheck(todo.id, !todo.completed_flg)}
+              onChange={() => handleTodo(todo.id, 'completed_flg', !todo.completed_flg)}
               />
               <input
               type="text"
               value={todo.content}
               disabled={todo.completed_flg}
-              onChange={(e) => handleEdit(todo.id, e.target.value)}
+              onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
               />
-              <button onClick={() => handleRemove(todo.id, !todo.delete_flg)}>
+              <button onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
                 {todo.delete_flg ? '復元': '削除'}
               </button>
-            </li>
-          
+            </li>          
         ))}
       </ul>
     </div>
