@@ -1,18 +1,24 @@
 import React,{useState} from "react";
 
+//***** 型の定義 *****//
 type Todo ={
   content: string;
   readonly id: number;
   completed_flg: boolean;
   delete_flg: boolean;
 };
+type Filter = 'all' | 'completed' | 'unchecked' | 'delete';
 
-// Todoコンポーネントの定義
+//***** Todoコンポーネントの定義 *****//
 const Todo: React.FC = () => {
   const [todos,setTodos] = useState<Todo[]>([]);
   const [text,setText] = useState('');
   const [nextId,setNextId] = useState(1);
+  const [filter,setFilter] = useState<Filter>('all');
 
+  const isFormDisabled = filter === 'completed'|| filter === 'delete';
+
+  // Todoの追加ボタン押下時の処理
   const handleSubmit = () =>{
     // 何も入力されていなかったらリターン
     if(!text) return;
@@ -26,10 +32,9 @@ const Todo: React.FC = () => {
     // 更新前のtodosステートを元にスプレッド構文で展開した要素へnewTodoを加えた新しい配列でステートを更新
     setTodos((prevTodos)=>[newTodo, ...prevTodos]);
     setNextId(nextId + 1);
-    // フォームのクリア
-    setText('');    
+    setText('');    // フォームのクリア
   }
-
+  // Todoの内容編集の処理
   const handleEdit = (id:number, value: string) => {
     setTodos((todos) => {
       const newTodos = todos.map((todo) => {
@@ -41,7 +46,7 @@ const Todo: React.FC = () => {
       return newTodos;
     })
   }
-
+  // Todoのチェックボックス変更時の処理
   const handleCheck = (id: number, completed_flg: boolean) => {
     setTodos((todos) => {
       const newTodos = todos.map((todo) => {
@@ -53,7 +58,7 @@ const Todo: React.FC = () => {
       return newTodos;
     })    
   };
-
+  // Todoの削除ボタン押下時の処理
   const handleRemove = (id: number, delete_flg: boolean) => {
     setTodos((todos) => {
       const newTodos = todos.map((todo) => {
@@ -65,25 +70,58 @@ const Todo: React.FC = () => {
       return newTodos;
     })
   }
+  // Todoのフィルター（セレクトボックス）変更時の処理
+  const handleFilterChange = (filter: Filter) => {
+    setFilter(filter);
+  };
+  // フィルタリングされたタスクリストを取得する処理
+  const getFilteredTodos = () => {
+    switch(filter){
+      case 'completed': //完了済
+        return todos.filter((todo) => todo.completed_flg && !todo.delete_flg);
+      case 'unchecked': //未完了
+        return todos.filter((todo) => !todo.completed_flg && !todo.delete_flg)
+      case 'delete':  // 削除済
+        return todos.filter((todo) => todo.delete_flg)
+      default:
+        return todos.filter((todo) => !todo.delete_flg)
+    };
+  };
+  // 削除対象のタスクリストを取得する処理
+  const handleEmpty = () =>{
+    setTodos((todos) => todos.filter((todo) => !todo.delete_flg));
+  }
 
   return (
-    <div>
-      <form 
-      onSubmit={(e) => {
-        e.preventDefault();   // フォームのデフォルト動作を防ぐ
-        handleSubmit();       // handleSubmit関数をコール
-      }}
-      >
-        <input
-        type="text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        />
-        <input type="submit" value="追加" />
-      </form>
+    <div className = "todo-container">
+      <select defaultValue="all" onChange={(e) => handleFilterChange(e.target.value as Filter)}>
+        <option value="all">全てのタスク</option>
+        <option value="completed">完了したタスク</option>
+        <option value="unchecked">現在のタスク</option>
+        <option value="delete">ゴミ箱</option>
+      </select>
+      {filter === 'delete' ? (
+        <button onClick={handleEmpty}>ゴミ箱を空にする</button>
+        ):(
+          filter !== 'completed' && (
+            <form 
+            onSubmit={(e) => {
+              e.preventDefault();   // フォームのデフォルト動作を防ぐ
+              handleSubmit();       // handleSubmit関数をコール
+            }}
+            >
+              <input
+              type="text"
+              value={text}
+              disabled={isFormDisabled}
+              onChange={(e) => setText(e.target.value)}
+              />
+              <input type="submit" value="追加" />
+            </form>
+          )
+        )}      
       <ul>
-        {todos.map((todo) => {
-          return (
+        {getFilteredTodos().map((todo) => (          
             <li key={todo.id}>
               <input
               type="checkbox"
@@ -100,8 +138,8 @@ const Todo: React.FC = () => {
                 {todo.delete_flg ? '復元': '削除'}
               </button>
             </li>
-          );
-        })}
+          
+        ))}
       </ul>
     </div>
   );
