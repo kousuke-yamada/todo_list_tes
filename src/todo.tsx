@@ -4,7 +4,6 @@ import TodoItem from './components/TodoItem';
 import type { Todo } from './types';
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 
-
 type Filter = 'all' | 'completed' | 'unchecked' | 'delete';
 
 //***** Todoコンポーネントの定義 *****//
@@ -22,9 +21,8 @@ const Todo: React.FC = () => {
   },[]);
 
   // Todoの追加ボタン押下時の処理
-  const handleSubmit = () =>{
-    // 何も入力されていなかったらリターン
-    if(!text) return;
+  const handleSubmit = () => {
+    if(!text) return;  // 何も入力されていなかったらリターン
     
     const newTodo: Omit<Todo, 'id'> = {
       content: text,
@@ -74,7 +72,7 @@ const Todo: React.FC = () => {
         return todos.filter((todo) => todo.completed_flg && !todo.delete_flg);
       case 'unchecked': //未完了
         return todos.filter((todo) => !todo.completed_flg && !todo.delete_flg)
-      case 'delete':  // 削除済
+      case 'delete':    // 削除済
         return todos.filter((todo) => todo.delete_flg)
       default:
         return todos.filter((todo) => !todo.delete_flg)
@@ -105,10 +103,10 @@ const Todo: React.FC = () => {
         <button onClick={handleEmpty}>ゴミ箱を空にする</button>
       )}
       {filter !== 'completed' && (
-        <form 
+        <form
           onSubmit={(e) => {
           e.preventDefault();   // フォームのデフォルト動作を防ぐ
-          handleSubmit();       // handleSubmit関数をコール
+          handleSubmit();
         }}
         >
           <input

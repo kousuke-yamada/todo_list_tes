@@ -2,7 +2,6 @@ import React from 'react';
 import { Todo } from '../types'; // Todo 型をインポート
 import { DraggableProvided, DraggableStateSnapshot } from 'react-beautiful-dnd';
 
-
 interface TodoItemProps {
   todo: Todo;
   index: number; // ドラッグアンドドロップのために必要なインデックス
@@ -12,7 +11,6 @@ interface TodoItemProps {
   provided: DraggableProvided; // ドラッグ用に提供されたプロパティ
   snapshot: DraggableStateSnapshot; // ドラッグの状態情報
 }
-
 
 const TodoItem: React.FC<TodoItemProps> = ({
   todo,
@@ -31,16 +29,13 @@ const TodoItem: React.FC<TodoItemProps> = ({
       todo.id === id ? { ...todo, [key]: value } : todo
     );
 
-
     setTodos(updatedTodos); // 親のステートを更新
-
 
     const updatedTodo = updatedTodos.find(todo => todo.id === id);
     if (updatedTodo) {
       updateTodo(id, updatedTodo); // 親コンポーネントから渡された関数でサーバー更新
     }
   };
-
 
   return (
     <li
