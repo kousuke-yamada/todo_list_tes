@@ -1,4 +1,4 @@
-import { Todo } from './todo';
+import type { Todo } from './types';
 
 export const fetchTodos = async (): Promise<Todo[]> => {
   const response = await fetch("http://localhost:3031/api/v1/todos");
